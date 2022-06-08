@@ -8,7 +8,7 @@ services:
     networks:
       - app-network
     ports:
-      - 80:80
+      - 8080:8080
     depends_on:
       - app
     restart: always
@@ -17,18 +17,48 @@ services:
     image: node:18.3.0-alpine
     container_name: app
     working_dir: /app
+    environment:
+      - DB_HOST=database
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=nodedb
+      - APP_PORT=3000
     volumes:
       - ./app:/app
       - type: bind
-        source: ./app.sh
+        source: ./app-entrypoint.sh
         target: /entrypoint.sh
     networks:
       - app-network
+      - database-network
     ports:
       - 3000:3000
+    depends_on: 
+      database:
+        condition: service_healthy
     restart: always
     command: sh /entrypoint.sh
+  
+  database:
+    image: mysql:8.0.29
+    command: --innodb-use-native-aio=0
+    container_name: database
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - ./mysql/:/docker-entrypoint-initdb.d/
+    networks: 
+      - database-network
+    ports: 
+      - 3306:3306
+    restart: always
+    healthcheck:
+            test: ["CMD", 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p$$MYSQL_ROOT_PASSWORD' ]
+            timeout: 5s
+            retries: 10
 
 networks: 
   app-network:
+    driver: bridge
+  database-network:
     driver: bridge

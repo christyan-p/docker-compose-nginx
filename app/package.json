@@ -9,6 +9,8 @@
       "start": "node index.js"
     },
     "dependencies": {
-      "express": "*"
+      "express": "*",
+      "mysql2": "*",
+      "dotenv": "*"
     }
 }
